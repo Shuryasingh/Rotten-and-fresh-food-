@@ -1,0 +1,142 @@
+{
+  "split": "val",
+  "total_samples": 158,
+  "class_counts": {
+    "fresh": 66,
+    "rotten": 92
+  },
+  "threshold": 0.8,
+  "confusion_matrix_forced_rows_true_cols_pred": {
+    "fresh": {
+      "pred_fresh": 63,
+      "pred_rotten": 3
+    },
+    "rotten": {
+      "pred_fresh": 2,
+      "pred_rotten": 90
+    }
+  },
+  "confusion_matrix_thresholded_rows_true_cols_pred": {
+    "fresh": {
+      "pred_fresh": 63,
+      "pred_rotten": 0,
+      "uncertain": 3
+    },
+    "rotten": {
+      "pred_fresh": 1,
+      "pred_rotten": 86,
+      "uncertain": 5
+    }
+  },
+  "metrics": {
+    "forced_accuracy": 0.9684,
+    "rotten_recall": 0.9783,
+    "rotten_precision": 0.9677,
+    "fresh_recall": 0.9545,
+    "fresh_precision": 0.9692,
+    "accepted_fraction": 0.9494,
+    "accepted_accuracy": 0.9933,
+    "uncertain_count": 8
+  },
+  "misclassifications": [
+    {
+      "filename": "pub-all-fre357__c66b2749.jpg",
+      "true_class": "fresh",
+      "predicted_forced": "rotten",
+      "confidence": 0.5981,
+      "fresh_score": 0.4019,
+      "rotten_score": 0.5981
+    },
+    {
+      "filename": "pub-all-fre359__88da86a9.jpg",
+      "true_class": "fresh",
+      "predicted_forced": "rotten",
+      "confidence": 0.6694,
+      "fresh_score": 0.3306,
+      "rotten_score": 0.6694
+    },
+    {
+      "filename": "pub-all-fre370__dbc6b2b2.jpg",
+      "true_class": "fresh",
+      "predicted_forced": "rotten",
+      "confidence": 0.7216,
+      "fresh_score": 0.2784,
+      "rotten_score": 0.7216
+    },
+    {
+      "filename": "pub-all-rot436__4560cb6e.jpg",
+      "true_class": "rotten",
+      "predicted_forced": "fresh",
+      "confidence": 0.897,
+      "fresh_score": 0.897,
+      "rotten_score": 0.103
+    },
+    {
+      "filename": "pub-all-rot464__2a2fbbd9.jpg",
+      "true_class": "rotten",
+      "predicted_forced": "fresh",
+      "confidence": 0.5931,
+      "fresh_score": 0.5931,
+      "rotten_score": 0.4069
+    }
+  ],
+  "uncertain_samples": [
+    {
+      "filename": "pub-all-fre357__c66b2749.jpg",
+      "true_class": "fresh",
+      "confidence": 0.5981,
+      "fresh_score": 0.4019,
+      "rotten_score": 0.5981
+    },
+    {
+      "filename": "pub-all-fre359__88da86a9.jpg",
+      "true_class": "fresh",
+      "confidence": 0.6694,
+      "fresh_score": 0.3306,
+      "rotten_score": 0.6694
+    },
+    {
+      "filename": "pub-all-fre370__dbc6b2b2.jpg",
+      "true_class": "fresh",
+      "confidence": 0.7216,
+      "fresh_score": 0.2784,
+      "rotten_score": 0.7216
+    },
+    {
+      "filename": "pub-all-rot459__582d3beb.jpg",
+      "true_class": "rotten",
+      "confidence": 0.7876,
+      "fresh_score": 0.2124,
+      "rotten_score": 0.7876
+    },
+    {
+      "filename": "pub-all-rot464__2a2fbbd9.jpg",
+      "true_class": "rotten",
+      "confidence": 0.5931,
+      "fresh_score": 0.5931,
+      "rotten_score": 0.4069
+    },
+    {
+      "filename": "pub-all-rot511__3db0fd06.jpg",
+      "true_class": "rotten",
+      "confidence": 0.7253,
+      "fresh_score": 0.2747,
+      "rotten_score": 0.7253
+    },
+    {
+      "filename": "pub-all-rot520__7e3fcf52.jpg",
+      "true_class": "rotten",
+      "confidence": 0.7119,
+      "fresh_score": 0.2881,
+      "rotten_score": 0.7119
+    },
+    {
+      "filename": "pub-all-rot521__d512a24b.jpg",
+      "true_class": "rotten",
+      "confidence": 0.6501,
+      "fresh_score": 0.3499,
+      "rotten_score": 0.6501
+    }
+  ],
+  "safety_disclaimer": "Visual appearance classifier only \u2014 not a food-safety determination."
+}

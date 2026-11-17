@@ -1,0 +1,59 @@
+# Python byte-code and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Training artifacts & Checkpoints (ignore actual binary weights from git if desired, but keep dir structure)
+# Note: Keep metadata.json and reports if committed, but ignore local test runs
+*.pt
+*.pth
+*.onnx
+
+# Data (keep folder structure via README.md, ignore local dataset images)
+data/train/fresh/*.jpg
+data/train/fresh/*.jpeg
+data/train/fresh/*.png
+data/train/rotten/*.jpg
+data/train/rotten/*.jpeg
+data/train/rotten/*.png
+data/val/fresh/*.jpg
+data/val/fresh/*.jpeg
+data/val/fresh/*.png
+data/val/rotten/*.jpg
+data/val/rotten/*.jpeg
+data/val/rotten/*.png
+data/test/fresh/*.jpg
+data/test/fresh/*.jpeg
+data/test/fresh/*.png
+data/test/rotten/*.jpg
+data/test/rotten/*.jpeg
+data/test/rotten/*.png
+
+# Ignore scan log data (keep logs/ dir)
+logs/*.csv
+!logs/README.md
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,96 @@
+{
+  "split": "test",
+  "total_samples": 161,
+  "class_counts": {
+    "fresh": 68,
+    "rotten": 93
+  },
+  "threshold": 0.8,
+  "confusion_matrix_forced_rows_true_cols_pred": {
+    "fresh": {
+      "pred_fresh": 67,
+      "pred_rotten": 1
+    },
+    "rotten": {
+      "pred_fresh": 0,
+      "pred_rotten": 93
+    }
+  },
+  "confusion_matrix_thresholded_rows_true_cols_pred": {
+    "fresh": {
+      "pred_fresh": 64,
+      "pred_rotten": 0,
+      "uncertain": 4
+    },
+    "rotten": {
+      "pred_fresh": 0,
+      "pred_rotten": 91,
+      "uncertain": 2
+    }
+  },
+  "metrics": {
+    "forced_accuracy": 0.9938,
+    "rotten_recall": 1.0,
+    "rotten_precision": 0.9894,
+    "fresh_recall": 0.9853,
+    "fresh_precision": 1.0,
+    "accepted_fraction": 0.9627,
+    "accepted_accuracy": 1.0,
+    "uncertain_count": 6
+  },
+  "misclassifications": [
+    {
+      "filename": "pub-all-fre382__82e45362.jpg",
+      "true_class": "fresh",
+      "predicted_forced": "rotten",
+      "confidence": 0.5027,
+      "fresh_score": 0.4973,
+      "rotten_score": 0.5027
+    }
+  ],
+  "uncertain_samples": [
+    {
+      "filename": "pub-all-fre382__82e45362.jpg",
+      "true_class": "fresh",
+      "confidence": 0.5027,
+      "fresh_score": 0.4973,
+      "rotten_score": 0.5027
+    },
+    {
+      "filename": "pub-all-fre415__72c4956a.jpg",
+      "true_class": "fresh",
+      "confidence": 0.7589,
+      "fresh_score": 0.7589,
+      "rotten_score": 0.2411
+    },
+    {
+      "filename": "pub-all-fre422__3b08ea1d.jpg",
+      "true_class": "fresh",
+      "confidence": 0.7727,
+      "fresh_score": 0.7727,
+      "rotten_score": 0.2273
+    },
+    {
+      "filename": "pub-all-fre433__34d7c8c9.jpg",
+      "true_class": "fresh",
+      "confidence": 0.7811,
+      "fresh_score": 0.7811,
+      "rotten_score": 0.2189
+    },
+    {
+      "filename": "pub-all-rot549__5b5d9d88.jpg",
+      "true_class": "rotten",
+      "confidence": 0.5756,
+      "fresh_score": 0.4244,
+      "rotten_score": 0.5756
+    },
+    {
+      "filename": "pub-all-rot602__741dd208.jpg",
+      "true_class": "rotten",
+      "confidence": 0.6995,
+      "fresh_score": 0.3005,
+      "rotten_score": 0.6995
+    }
+  ],
+  "safety_disclaimer": "Visual appearance classifier only \u2014 not a food-safety determination."
+}

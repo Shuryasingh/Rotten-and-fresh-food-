@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary-text: #0f172a;
+    --muted-text: hsl(215, 25%, 32%);
+    --primary-button-bg: #000000;
+    --primary-button-text: #ffffff;
+    --fallback-bg: hsl(201, 100%, 13%);
+  }
+
+  body {
+    color: var(--primary-text);
+    background-color: #fafaf9;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 400;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, .font-serif {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-weight: 400;
+  }
+}
+
+/* ------------------------------------------------------------- */
+/* Mandatory Hero & Typography Specifications                    */
+/* ------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  isolation: isolate;
+  background-color: hsl(201, 100%, 13%);
+}
+
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+/* Subtle, cinematic 20% dark overlay for guaranteed text legibility */
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Gradient vignette at bottom of hero to smoothly transition to content */
+.hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hero-title {
+  font-family: "Instrument Serif", serif;
+  font-size: 80px;
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -2.46px;
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 48px;
+    letter-spacing: -2.46px;
+  }
+}
+
+/* ------------------------------------------------------------- */
+/* Animations & Transitions                                      */
+/* ------------------------------------------------------------- */
+
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-rise-0 {
+  animation: fade-rise 0.8s ease-out 0s forwards;
+}
+
+.fade-rise-1 {
+  animation: fade-rise 0.8s ease-out 0.15s forwards;
+}
+
+.fade-rise-2 {
+  animation: fade-rise 0.8s ease-out 0.3s forwards;
+}
+
+.fade-rise-3 {
+  animation: fade-rise 0.8s ease-out 0.45s forwards;
+}
+
+.premium-button {
+  transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.premium-button:hover {
+  transform: scale(1.03);
+}
+
+/* Minimalist Editorial Utilities */
+.editorial-grid-line {
+  background: rgba(15, 23, 42, 0.08);
+}
+
+.editorial-tag {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* Smooth reveal class for scroll elements */
+.reveal-on-scroll {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 768px) {
+  .reveal-on-scroll:not(.revealed) {
+    opacity: 0.1;
+    transform: translateY(16px);
+  }
+  .reveal-on-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .fade-rise-0,
+  .fade-rise-1,
+  .fade-rise-2,
+  .fade-rise-3,
+  .reveal-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  .premium-button:hover {
+    transform: none !important;
+  }
+}

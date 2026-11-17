@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+.npm/
+
+# Virtual Environments
+.venv/
+*/.venv/
+env/
+venv/
+ENV/
+
+# Python Cache & Bytecode
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*/.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Logs
+logs/*.csv
+!logs/README.md
+*/logs/*.csv
+!*/logs/README.md
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo

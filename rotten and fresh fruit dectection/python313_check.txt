@@ -1,0 +1,2 @@
+3.13.17 (tags/v3.13.17:64e080d, Oct 21 2026, 14:08:53) [MSC v.1944 64 bit (AMD64)]
+C:\Users\Tejas mishra\AppData\Local\Programs\Python\Python313\python.exe
