@@ -17,11 +17,13 @@ import {
   Trash2,
   Activity,
 } from 'lucide-react';
-import { analyzeFruitFrame } from '../utils/fruitVision';
+import { analyzeFruitFrame, normalizeFruitVariety } from '../utils/fruitVision';
+import { initOnnxEngine, predictWithOnnx, OnnxEngineStatus } from '../utils/onnxFruitEngine';
 
 interface PredictionResponse {
   status: string;
-  prediction: 'fresh' | 'rotten' | 'uncertain';
+  prediction?: 'fresh' | 'rotten' | 'uncertain';
+  verdict?: string;
   confidence: number;
   fresh_score: number;
   rotten_score: number;
@@ -48,6 +50,70 @@ interface ScanRecord {
 
 const SAMPLE_PRESETS: SampleSpecimen[] = [
   {
+    id: 's-apple-f',
+    name: 'Fresh Fuji Red Apple',
+    fruitType: 'apple',
+    expected: 'fresh',
+    imageUrl: '/samples/fresh-apple.jpg',
+    description: 'Firm red epidermis, unbroken cellular wax cuticle.',
+  },
+  {
+    id: 's-apple-r',
+    name: 'Rotten Bruised Apple',
+    fruitType: 'apple',
+    expected: 'rotten',
+    imageUrl: '/samples/rotten-apple.jpg',
+    description: 'Sunken brown bitter rot lesion & soft necrosis.',
+  },
+  {
+    id: 's-banana-f',
+    name: 'Fresh Yellow Banana',
+    fruitType: 'banana',
+    expected: 'fresh',
+    imageUrl: '/samples/fresh-banana.jpg',
+    description: 'Uniform golden carotenoid peel, firm cellular wall.',
+  },
+  {
+    id: 's-banana-r',
+    name: 'Rotten Necrotic Banana',
+    fruitType: 'banana',
+    expected: 'rotten',
+    imageUrl: '/samples/rotten-banana.jpg',
+    description: 'Blackened epidermal rot & crown liquefaction.',
+  },
+  {
+    id: 's-orange-f',
+    name: 'Fresh Mandarin Citrus',
+    fruitType: 'orange',
+    expected: 'fresh',
+    imageUrl: '/samples/fresh-orange.jpg',
+    description: 'Intact oil glands, hydrated leaf & vibrant flavedo.',
+  },
+  {
+    id: 's-orange-r',
+    name: 'Rotten Moldy Citrus',
+    fruitType: 'orange',
+    expected: 'rotten',
+    imageUrl: '/samples/rotten-orange.jpg',
+    description: 'Penicillium digitatum blue-green mold sporulation.',
+  },
+  {
+    id: 's-green-apple-f',
+    name: 'Fresh Granny Smith',
+    fruitType: 'apple',
+    expected: 'fresh',
+    imageUrl: '/samples/fresh-green-apple.jpg',
+    description: 'Uniform chlorophyll peel with unbroken turgor.',
+  },
+  {
+    id: 's-apple-ox-r',
+    name: 'Rotten Oxidized Apple',
+    fruitType: 'apple',
+    expected: 'rotten',
+    imageUrl: '/samples/rotten-oxidized-apple.jpg',
+    description: 'Severe PPO enzymatic browning & epidermal collapse.',
+  },
+  {
     id: 's-mango-f',
     name: 'Fresh Alphonso Mango',
     fruitType: 'mango',
@@ -56,76 +122,12 @@ const SAMPLE_PRESETS: SampleSpecimen[] = [
     description: 'Vibrant golden pericarp, firm cuticle, unbroken bloom.',
   },
   {
-    id: 's-mango-r',
-    name: 'Rotten Anthracnose Mango',
-    fruitType: 'mango',
-    expected: 'rotten',
-    imageUrl: 'https://images.unsplash.com/photo-1601493700631-2b16ec4b4716?q=80&w=640&auto=format&fit=crop',
-    description: 'Sunken necrotic black lesions, stem-cavity decay.',
-  },
-  {
-    id: 's-grapes-f',
-    name: 'Fresh Crimson Grapes',
-    fruitType: 'grapes',
-    expected: 'fresh',
-    imageUrl: 'https://images.unsplash.com/photo-1596363505729-4190a9506133?q=80&w=640&auto=format&fit=crop',
-    description: 'Taut skin, delicate white epicuticular wax bloom.',
-  },
-  {
-    id: 's-grapes-r',
-    name: 'Rotten Botrytis Grapes',
-    fruitType: 'grapes',
-    expected: 'rotten',
-    imageUrl: 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?q=80&w=640&auto=format&fit=crop',
-    description: 'Gray mold fungal spores, leaky slip-skin softening.',
-  },
-  {
-    id: 's-apple-f',
-    name: 'Fresh Fuji Apple',
-    fruitType: 'apple',
-    expected: 'fresh',
-    imageUrl: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?q=80&w=640&auto=format&fit=crop',
-    description: 'Firm epidermis, unbroken cellular wax layer.',
-  },
-  {
-    id: 's-apple-r',
-    name: 'Rotten Oxidized Apple',
-    fruitType: 'apple',
-    expected: 'rotten',
-    imageUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=640&auto=format&fit=crop',
-    description: 'Pathogenic soft brown bruise and rotting tissue.',
-  },
-  {
-    id: 's-banana-f',
-    name: 'Fresh Cavendish Banana',
-    fruitType: 'banana',
-    expected: 'fresh',
-    imageUrl: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?q=80&w=640&auto=format&fit=crop',
-    description: 'Uniform yellow peel with natural sugar freckles.',
-  },
-  {
-    id: 's-banana-r',
-    name: 'Rotten Necrotic Banana',
-    fruitType: 'banana',
-    expected: 'rotten',
-    imageUrl: 'https://images.unsplash.com/photo-1528825871115-3581a5387919?q=80&w=640&auto=format&fit=crop',
-    description: 'Crown fungal liquefaction and blackened epidermal rot.',
-  },
-  {
     id: 's-strawberry-f',
     name: 'Fresh Ruby Strawberry',
     fruitType: 'strawberry',
     expected: 'fresh',
     imageUrl: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?q=80&w=640&auto=format&fit=crop',
     description: 'Glossy red drupelets, hydrated bright green calyx.',
-  },
-  {
-    id: 's-avocado-f',
-    name: 'Fresh Hass Avocado',
-    fruitType: 'avocado',
-    expected: 'fresh',
-    imageUrl: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?q=80&w=640&auto=format&fit=crop',
-    description: 'Intact pedicel button, uniform creamy green mesocarp.',
   },
 ];
 
@@ -160,13 +162,49 @@ export const LiveCameraScanner: React.FC = () => {
   const [inferenceMs, setInferenceMs] = useState<number | null>(null);
   const [fps, setFps] = useState(2.5);
   const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [onnxStatus, setOnnxStatus] = useState<OnnxEngineStatus>('loading');
   const [detectedBiomarker, setDetectedBiomarker] = useState<string>('Unbroken Epicuticle & Healthy Cellular Turgor');
   const [necroticPercent, setNecroticPercent] = useState<number>(0);
   const [healthyPercent, setHealthyPercent] = useState<number>(95);
-  const [engineType, setEngineType] = useState<string>('Bio-Optical Engine (Vercel Ready)');
+  const [engineType, setEngineType] = useState<string>('MobileNetV2 ONNX WASM (Loading...)');
+
+  // Temporal EMA smoothing ref for flicker-free live webcam verdicts
+  const emaScoresRef = useRef<{ fresh: number; rotten: number } | null>(null);
+  const isInferringRef = useRef<boolean>(false);
 
   // Logged Scan History
   const [scanHistory, setScanHistory] = useState<ScanRecord[]>([]);
+
+  // Preload MobileNetV2 ONNX model immediately on mount so Vercel & local startup is instant
+  useEffect(() => {
+    let mounted = true;
+    setOnnxStatus('loading');
+    initOnnxEngine()
+      .then(() => {
+        if (!mounted) return;
+        setOnnxStatus('ready');
+        setEngineType('MobileNetV2 ONNX Neural Net (Browser WASM)');
+      })
+      .catch((err) => {
+        console.warn('ONNX initialization fallback active:', err);
+        if (!mounted) return;
+        setOnnxStatus('error');
+        setEngineType('Bio-Optical Fallback Engine');
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Re-evaluate verdict immediately when threshold slider moves
+  useEffect(() => {
+    if (prediction === 'fresh' || prediction === 'rotten' || prediction === 'uncertain') {
+      const thr = threshold / 100;
+      if (freshScore >= thr) setPrediction('fresh');
+      else if (rottenScore >= thr) setPrediction('rotten');
+      else setPrediction('uncertain');
+    }
+  }, [threshold, freshScore, rottenScore, prediction]);
 
   // Enumerate video devices
   useEffect(() => {
@@ -207,6 +245,7 @@ export const LiveCameraScanner: React.FC = () => {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       }
+      emaScoresRef.current = null;
       setIsCameraActive(true);
       setIsPaused(false);
       setActiveInputMode('camera');
@@ -225,6 +264,7 @@ export const LiveCameraScanner: React.FC = () => {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    emaScoresRef.current = null;
     setIsCameraActive(false);
     setPrediction('idle');
   };
@@ -240,101 +280,149 @@ export const LiveCameraScanner: React.FC = () => {
     }
   };
 
-  // High-Precision Real-Time Inference Executor (Works on Vercel & Local)
+  // Real-Time Hybrid Neural + Presence-Gated Inference Executor (Works 100% on Vercel & Local)
   const executeInference = useCallback(
-    async (canvas: HTMLCanvasElement, fruitTag: string, samplePreset?: SampleSpecimen) => {
+    async (canvas: HTMLCanvasElement, fruitTag: string, isLiveStream: boolean = false) => {
+      if (isInferringRef.current && isLiveStream) return;
+      isInferringRef.current = true;
       const startTime = performance.now();
 
-      // If a curated benchmark sample preset is directly selected, provide its verified laboratory baseline
-      if (samplePreset) {
-        const isFresh = samplePreset.expected === 'fresh';
-        setPrediction(samplePreset.expected);
-        setFreshScore(isFresh ? 0.984 : 0.016);
-        setRottenScore(isFresh ? 0.016 : 0.984);
-        setDetectedBiomarker(samplePreset.description);
-        setNecroticPercent(isFresh ? 0.4 : 32.8);
-        setHealthyPercent(isFresh ? 96.5 : 14.2);
-        setInferenceMs(1.5);
-        setEngineType('Benchmark Specimen Reference');
-        return;
-      }
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      let imgData: ImageData | null = null;
       try {
-        imgData = ctx.getImageData(0, 0, 224, 224);
-      } catch (err) {
-        console.warn('Canvas pixel extraction notice:', err);
-      }
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
 
-      if (!imgData) return;
-
-      const visionResult = analyzeFruitFrame(imgData, fruitTag, threshold / 100);
-
-      // If no fruit is inside the box (e.g. user sitting in front of camera), show AWAITING SPECIMEN
-      if (!visionResult.fruitDetected) {
-        setPrediction('initializing');
-        setFreshScore(0.0);
-        setRottenScore(0.0);
-        setDetectedBiomarker('Awaiting Produce: Place fruit inside reticle');
-        setNecroticPercent(0);
-        setHealthyPercent(0);
-        setEngineType('Bio-Optical Neural Vision (Vercel Standalone)');
-        return;
-      }
-
-      let usedBackend = false;
-
-      // Attempt local Python backend only on local network (avoids Mixed Content on Vercel HTTPS)
-      const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      if (isLocalHost && window.location.protocol === 'http:') {
+        let imgData: ImageData | null = null;
         try {
-          const apiUrl = window.location.port === '8080' ? '/api/predict' : 'http://localhost:8080/api/predict';
-          const base64Img = canvas.toDataURL('image/jpeg', 0.85);
-          const resp = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              image: base64Img,
-              threshold: threshold / 100,
-              filename: `${fruitTag}_scan.jpg`,
-            }),
-          });
-
-          if (resp.ok) {
-            const data: PredictionResponse = await resp.json();
-            setBackendOnline(true);
-            setPrediction(data.prediction);
-            setFreshScore(data.fresh_score);
-            setRottenScore(data.rotten_score);
-            setInferenceMs(data.inference_ms);
-            setEngineType('MobileNetV2 ONNX (Port 8080)');
-            usedBackend = true;
-          }
-        } catch {
-          setBackendOnline(false);
+          imgData = ctx.getImageData(0, 0, 224, 224);
+        } catch (err) {
+          console.warn('Canvas pixel extraction notice:', err);
         }
+
+        if (!imgData) return;
+
+        const thr = threshold / 100;
+        const variety = normalizeFruitVariety(fruitTag);
+
+        // 1. Specimen Presence & Lighting Gate (blocks empty walls / bare user face in live camera)
+        const presence = analyzeFruitFrame(imgData, fruitTag, thr);
+        setLuminosity(presence.luminosity);
+
+        if (isLiveStream && !presence.fruitDetected) {
+          emaScoresRef.current = null;
+          setPrediction('initializing');
+          setFreshScore(0.0);
+          setRottenScore(0.0);
+          setDetectedBiomarker(presence.primaryBiomarker);
+          setNecroticPercent(0);
+          setHealthyPercent(0);
+          return;
+        }
+
+        // 2. Run Real MobileNetV2 ONNX Neural Network in-browser (primary accuracy engine)
+        let rawFresh = presence.fresh_score;
+        let rawRotten = presence.rotten_score;
+        let latencyMs = Math.round((performance.now() - startTime) * 10) / 10;
+        let activeEngine = 'Bio-Optical Spectral Fallback';
+        let neuralSuccess = false;
+
+        try {
+          const onnxOut = await predictWithOnnx(canvas, true);
+          rawFresh = onnxOut.freshScore;
+          rawRotten = onnxOut.rottenScore;
+          latencyMs = onnxOut.inferenceMs;
+          setOnnxStatus('ready');
+          setBackendOnline(false);
+          activeEngine = 'MobileNetV2 ONNX Neural Net (Browser WASM)';
+          neuralSuccess = true;
+        } catch (onnxErr) {
+          // Optional localhost Python fallback ONLY if running locally alongside web_app.py
+          const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          if (isLocalHost && window.location.protocol === 'http:') {
+            try {
+              const apiUrl = window.location.port === '8080' ? '/api/predict' : 'http://localhost:8080/api/predict';
+              const base64Img = canvas.toDataURL('image/jpeg', 0.85);
+              const resp = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  image: base64Img,
+                  threshold: thr,
+                  filename: `${fruitTag}_scan.jpg`,
+                }),
+              });
+              if (resp.ok) {
+                const data: PredictionResponse = await resp.json();
+                setBackendOnline(true);
+                rawFresh = data.fresh_score;
+                rawRotten = data.rotten_score;
+                latencyMs = data.inference_ms;
+                activeEngine = 'MobileNetV2 ONNX (Python Backend)';
+                neuralSuccess = true;
+              }
+            } catch {
+              setBackendOnline(false);
+            }
+          } else {
+            console.warn('In-browser ONNX inference unavailable, using spectral fallback:', onnxErr);
+          }
+        }
+
+        // 3. Out-of-distribution specialty guard for dark purple grapes & dark Hass avocado
+        // (MobileNetV2 was trained on Apple/Banana/Orange; purple grape clusters look brown/dark without spectral guidance)
+        const isDarkSpecialty =
+          variety === 'grapes' ||
+          variety === 'avocado' ||
+          (variety === 'all' && presence.dominantPurpleGrapeRatio > 0.28);
+
+        if (neuralSuccess && isDarkSpecialty) {
+          rawFresh = Math.round((0.25 * rawFresh + 0.75 * presence.fresh_score) * 10000) / 10000;
+          rawRotten = Math.round((1 - rawFresh) * 10000) / 10000;
+          activeEngine = 'Hybrid MobileNetV2 + Spectral Cultivar Model';
+        }
+
+        // 4. Temporal EMA smoothing on live camera feed so verdicts don't flicker across frames
+        let finalFresh = rawFresh;
+        let finalRotten = rawRotten;
+        if (isLiveStream) {
+          if (emaScoresRef.current) {
+            const alpha = 0.58;
+            finalFresh = alpha * rawFresh + (1 - alpha) * emaScoresRef.current.fresh;
+            finalRotten = 1 - finalFresh;
+          }
+          emaScoresRef.current = { fresh: finalFresh, rotten: finalRotten };
+        } else {
+          emaScoresRef.current = null;
+        }
+
+        finalFresh = Math.round(finalFresh * 10000) / 10000;
+        finalRotten = Math.round(finalRotten * 10000) / 10000;
+
+        // 5. Strict 3-State Certainty Decision
+        let finalVerdict: 'fresh' | 'rotten' | 'uncertain' = 'uncertain';
+        if (finalFresh >= thr) finalVerdict = 'fresh';
+        else if (finalRotten >= thr) finalVerdict = 'rotten';
+
+        // Align biomarker telemetry cleanly with the neural network diagnosis
+        const telemetry = analyzeFruitFrame(imgData, fruitTag, thr, {
+          prediction: finalVerdict,
+          freshScore: finalFresh,
+          rottenScore: finalRotten,
+        });
+
+        setPrediction(finalVerdict);
+        setFreshScore(finalFresh);
+        setRottenScore(finalRotten);
+        setInferenceMs(latencyMs);
+        setEngineType(activeEngine);
+        setDetectedBiomarker(telemetry.primaryBiomarker);
+        setNecroticPercent(telemetry.necroticAreaPercent);
+        setHealthyPercent(telemetry.healthyChromaPercent);
+
+        const elapsed = performance.now() - startTime;
+        setFps(Math.round((1000 / Math.max(elapsed, 200)) * 10) / 10);
+      } finally {
+        isInferringRef.current = false;
       }
-
-      if (!usedBackend) {
-        // High-Precision Bio-Optical Spectral Engine (Runs 100% Client-Side on Vercel)
-        setBackendOnline(false);
-        setPrediction(visionResult.prediction);
-        setFreshScore(visionResult.fresh_score);
-        setRottenScore(visionResult.rotten_score);
-        setInferenceMs(Math.round((performance.now() - startTime) * 10) / 10);
-        setEngineType('Bio-Optical Neural Vision (Vercel Standalone)');
-      }
-
-      setDetectedBiomarker(visionResult.primaryBiomarker);
-      setNecroticPercent(visionResult.necroticAreaPercent);
-      setHealthyPercent(visionResult.healthyChromaPercent);
-      setLuminosity(visionResult.luminosity);
-
-      const elapsed = performance.now() - startTime;
-      setFps(Math.round((1000 / Math.max(elapsed, 200)) * 10) / 10);
     },
     [threshold]
   );
@@ -348,13 +436,13 @@ export const LiveCameraScanner: React.FC = () => {
       if (isCancelled || !videoRef.current || !canvasRef.current) return;
 
       const video = videoRef.current;
-      if (video.readyState < 2) return;
+      if (video.readyState < 2 || video.videoWidth === 0) return;
 
       const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) return;
 
-      // Extract center crop according to targetBoxSize
+      // Extract center square crop matching the cyan target reticle
       const vw = video.videoWidth;
       const vh = video.videoHeight;
       const size = Math.min(vw, vh) * (targetBoxSize / 100);
@@ -365,17 +453,8 @@ export const LiveCameraScanner: React.FC = () => {
       canvas.height = 224;
       ctx.drawImage(video, sx, sy, size, size, 0, 0, 224, 224);
 
-      // Measure Average Luminosity
-      const imgData = ctx.getImageData(0, 0, 224, 224);
-      let totalLuma = 0;
-      for (let i = 0; i < imgData.data.length; i += 16) {
-        totalLuma += (imgData.data[i] * 0.299 + imgData.data[i + 1] * 0.587 + imgData.data[i + 2] * 0.114);
-      }
-      const avgLuma = Math.round(totalLuma / (imgData.data.length / 16));
-      setLuminosity(avgLuma);
-
-      await executeInference(canvas, selectedFruit);
-    }, 400);
+      await executeInference(canvas, selectedFruit, true);
+    }, 350);
 
     return () => {
       isCancelled = true;
@@ -383,20 +462,21 @@ export const LiveCameraScanner: React.FC = () => {
     };
   }, [activeInputMode, isCameraActive, isPaused, targetBoxSize, selectedFruit, executeInference]);
 
-  // Handle Preset Sample Selection
+  // Handle Preset Sample Selection (runs genuine ONNX inference, no mocked results)
   const handleSelectSample = (sample: SampleSpecimen) => {
+    emaScoresRef.current = null;
     setActiveInputMode('sample');
     setActiveSample(sample);
     setSelectedFruit(sample.fruitType);
+    setPrediction('initializing');
 
-    // Draw preset onto canvas and execute inference
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.src = sample.imageUrl;
     img.onload = () => {
       if (!canvasRef.current) return;
       const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) return;
 
       canvas.width = 224;
@@ -406,7 +486,7 @@ export const LiveCameraScanner: React.FC = () => {
       const sy = (img.height - minDim) / 2;
       ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, 224, 224);
 
-      executeInference(canvas, sample.fruitType, sample);
+      executeInference(canvas, sample.fruitType, false);
     };
   };
 
@@ -415,18 +495,20 @@ export const LiveCameraScanner: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    emaScoresRef.current = null;
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = event.target?.result as string;
       setUploadedImageSrc(result);
       setActiveInputMode('upload');
+      setPrediction('initializing');
 
       const img = new Image();
       img.src = result;
       img.onload = () => {
         if (!canvasRef.current) return;
         const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (!ctx) return;
 
         canvas.width = 224;
@@ -436,7 +518,7 @@ export const LiveCameraScanner: React.FC = () => {
         const sy = (img.height - minDim) / 2;
         ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, 224, 224);
 
-        executeInference(canvas, selectedFruit);
+        executeInference(canvas, selectedFruit, false);
       };
     };
     reader.readAsDataURL(file);
@@ -551,8 +633,16 @@ export const LiveCameraScanner: React.FC = () => {
             </div>
 
             <div className="inline-flex items-center gap-2 bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/30 px-3.5 py-1.5 rounded-full text-xs font-sans font-medium uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-              <span>{backendOnline ? 'LIVE AI INFERENCE (PORT 8080)' : 'AI INFERENCE ACTIVE'}</span>
+              <span className={`w-2 h-2 rounded-full animate-pulse ${onnxStatus === 'ready' || backendOnline ? 'bg-[#10b981]' : 'bg-[#06b6d4]'}`} />
+              <span>
+                {backendOnline
+                  ? 'MOBILENETV2 ONNX (PORT 8080)'
+                  : onnxStatus === 'ready'
+                  ? 'MOBILENETV2 ONNX READY (IN-BROWSER)'
+                  : onnxStatus === 'loading'
+                  ? 'LOADING NEURAL MODEL...'
+                  : 'SPECTRAL VISION ACTIVE'}
+              </span>
             </div>
           </div>
         </div>
@@ -649,6 +739,7 @@ export const LiveCameraScanner: React.FC = () => {
                 <>
                   <video
                     ref={videoRef}
+                    autoPlay
                     playsInline
                     muted
                     className={`w-full h-full object-cover ${isCameraActive ? 'block' : 'hidden'}`}
@@ -681,7 +772,7 @@ export const LiveCameraScanner: React.FC = () => {
                   <img
                     src={activeSample.imageUrl}
                     alt={activeSample.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain bg-[#05070a]"
                   />
                   <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded border border-white/10 text-xs">
                     <span className="text-[#10b981] font-semibold">Testing Preset: </span>
@@ -696,7 +787,7 @@ export const LiveCameraScanner: React.FC = () => {
                   <img
                     src={uploadedImageSrc}
                     alt="Custom Uploaded Fruit"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain bg-[#05070a]"
                   />
                 </div>
               )}
@@ -704,16 +795,38 @@ export const LiveCameraScanner: React.FC = () => {
               {/* Interactive Reticle Target Square Overlay */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
                 <div
-                  className={`relative border-2 border-[#06b6d4] rounded shadow-[0_0_20px_rgba(6,182,212,0.35)] flex items-start justify-center pt-2 transition-all duration-300 ${
-                    reticleStyle === 'crosshair' ? 'border-dashed' : ''
-                  }`}
+                  className={`relative border-2 rounded flex items-start justify-center pt-2 transition-all duration-300 ${
+                    prediction === 'fresh'
+                      ? 'border-[#10b981] shadow-[0_0_24px_rgba(16,185,129,0.5)]'
+                      : prediction === 'rotten'
+                      ? 'border-[#ef4444] shadow-[0_0_24px_rgba(239,68,68,0.55)]'
+                      : prediction === 'uncertain'
+                      ? 'border-[#f59e0b] shadow-[0_0_20px_rgba(245,158,11,0.4)]'
+                      : 'border-[#06b6d4] shadow-[0_0_20px_rgba(6,182,212,0.35)]'
+                  } ${reticleStyle === 'crosshair' ? 'border-dashed' : ''}`}
                   style={{
                     width: `${targetBoxSize}%`,
                     height: `${targetBoxSize}%`,
                   }}
                 >
-                  <span className="bg-[#0f141f]/90 text-[#06b6d4] text-[10px] font-mono px-2.5 py-1 rounded tracking-widest uppercase border border-[#06b6d4]/40 shadow">
-                    [ PLACE {selectedFruit.toUpperCase()} IN SQUARE ]
+                  <span
+                    className={`bg-[#0f141f]/95 text-[10px] font-mono px-2.5 py-1 rounded tracking-widest uppercase border shadow ${
+                      prediction === 'fresh'
+                        ? 'text-[#10b981] border-[#10b981]/60'
+                        : prediction === 'rotten'
+                        ? 'text-[#ef4444] border-[#ef4444]/60'
+                        : prediction === 'uncertain'
+                        ? 'text-[#f59e0b] border-[#f59e0b]/60'
+                        : 'text-[#06b6d4] border-[#06b6d4]/40'
+                    }`}
+                  >
+                    {prediction === 'fresh'
+                      ? `[ FRESH • ${(freshScore * 100).toFixed(1)}% ]`
+                      : prediction === 'rotten'
+                      ? `[ ROTTEN • ${(rottenScore * 100).toFixed(1)}% ]`
+                      : prediction === 'uncertain'
+                      ? `[ UNCERTAIN • CHECK LIGHTING ]`
+                      : `[ PLACE ${selectedFruit.toUpperCase()} IN SQUARE ]`}
                   </span>
 
                   {reticleStyle === 'crosshair' && (
@@ -864,7 +977,10 @@ export const LiveCameraScanner: React.FC = () => {
               </div>
               <select
                 value={selectedFruit}
-                onChange={(e) => setSelectedFruit(e.target.value)}
+                onChange={(e) => {
+                  emaScoresRef.current = null;
+                  setSelectedFruit(e.target.value);
+                }}
                 className="w-full bg-[#1e293b] border border-emerald-500/40 text-white rounded-lg px-4 py-2.5 text-xs font-medium focus:outline-none focus:border-emerald-400 cursor-pointer shadow-lg"
               >
                 <option value="all">🌐 All Fruits (Auto-Detect)</option>

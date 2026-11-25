@@ -1051,13 +1051,15 @@ class LiveCameraAPIHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(payload)
 
-        elif path.startswith("/assets/"):
+        elif path.startswith("/assets/") or path.startswith("/models/") or path.startswith("/ort/") or path.startswith("/samples/"):
             asset_file = dist_dir / path.lstrip("/")
             if asset_file.exists() and asset_file.is_file():
-                if path.endswith(".js"):
+                if path.endswith(".js") or path.endswith(".mjs"):
                     ctype = "application/javascript"
                 elif path.endswith(".css"):
                     ctype = "text/css"
+                elif path.endswith(".wasm"):
+                    ctype = "application/wasm"
                 elif path.endswith(".svg"):
                     ctype = "image/svg+xml"
                 elif path.endswith(".png"):
@@ -1156,6 +1158,7 @@ class LiveCameraAPIHandler(BaseHTTPRequestHandler):
                 self.send_json(200, {
                     "status": "success",
                     "verdict": verdict,
+                    "prediction": verdict.lower(),
                     "confidence": round(confidence, 4),
                     "fresh_score": round(fresh_p, 4),
                     "rotten_score": round(rotten_p, 4),
